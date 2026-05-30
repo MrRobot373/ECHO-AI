@@ -1,0 +1,22 @@
+{
+  "fps": 24,
+  "pad": 4,
+  "states": {
+    "normal": {
+      "count": 215,
+      "ext": "png"
+    },
+    "listen": {
+      "count": 50,
+      "ext": "png"
+    },
+    "loding": {
+      "count": 75,
+      "ext": "png"
+    },
+    "error": {
+      "count": 75,
+      "ext": "png"
+    }
+  }
+}

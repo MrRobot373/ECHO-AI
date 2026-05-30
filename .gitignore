@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.dll
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+backend/models/
+backend/bin/
+.env
+*.log

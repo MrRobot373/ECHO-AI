@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <title>Echo AI</title>
+    <link rel="stylesheet" href="/index.css" />
+  </head>
+  <body>
+    <div id="bootSplash" class="boot-splash">
+      <video id="bootVideo" muted playsinline autoplay preload="auto" src="/assets/BOOT.mp4"></video>
+    </div>
+    <main class="screen">
+      <!-- ── top chrome ─────────────────────────────────────────────── -->
+      <button id="backButton" class="chrome-icon chrome-left" type="button" aria-label="Back">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
+      <button id="menuButton" class="chrome-icon chrome-right" type="button" aria-label="Menu">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+      </button>
+
+      <!-- ── avatar stage ───────────────────────────────────────────── -->
+      <section class="stage" data-state="sleeping">
+        <canvas id="avatarCanvas"></canvas>
+        <section id="messages" class="messages" aria-live="polite"></section>
+      </section>
+
+      <!-- ── bottom bar ─────────────────────────────────────────────── -->
+      <div class="bottombar">
+        <div class="mic-meter" aria-hidden="true"><span id="micLevel"></span></div>
+        <button id="micButton" class="mic-button" type="button" aria-label="Toggle microphone">
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="12" rx="3" />
+            <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+          </svg>
+        </button>
+        <div class="status-pill">
+          <span id="statusDot" class="status-dot"></span>
+          <span id="statusText">Tap mic to start</span>
+        </div>
+      </div>
+
+      <!-- ── slide-up text bar (Type) ───────────────────────────────── -->
+      <form id="textForm" class="text-bar" hidden>
+        <input id="textInput" autocomplete="off" placeholder="Message Echo" />
+        <button class="send-button" type="submit">Send</button>
+      </form>
+
+      <input id="languageSelect" type="hidden" value="en" />
+      <div id="toast" class="toast" hidden></div>
+
+      <!-- hidden bits kept for backend wiring (settings message) -->
+      <input id="wakePhrase" type="hidden" value="Hey Jarvis" />
+      <span id="connectionStatus" hidden>Offline</span>
+      <span id="pipelineStatus" hidden></span>
+
+      <!-- ── menu drawer ────────────────────────────────────────────── -->
+      <div id="menuScrim" class="scrim" hidden></div>
+      <aside id="menuPanel" class="menu-panel" hidden>
+
+        <!-- branded header -->
+        <header class="menu-head">
+          <div class="menu-brand">
+            <span class="menu-brand-mark"></span>
+            <div>
+              <div class="menu-brand-name">Echo AI</div>
+              <div class="menu-brand-sub">In-car assistant</div>
+            </div>
+          </div>
+          <button id="closeMenu" class="menu-close" type="button" aria-label="Close">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <path d="M6 6l12 12M18 6L6 18"/>
+            </svg>
+          </button>
+        </header>
+
+        <!-- pill tabs -->
+        <nav class="menu-tabs">
+          <button class="menu-tab active" type="button" data-menu-tab="permission">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Permissions
+          </button>
+          <button class="menu-tab" type="button" data-menu-tab="customize">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M20 12h2M2 12h2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41"/></svg>
+            Customize
+          </button>
+          <button class="menu-tab" type="button" data-menu-tab="info">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            Info
+          </button>
+        </nav>
+
+        <!-- ── Permissions ── -->
+        <section class="menu-section active" data-menu-section="permission">
+          <p class="section-hint">Control what Echo can access and do.</p>
+          <div class="perm-list">
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+                <span>Music</span>
+              </span>
+              <input type="checkbox" data-perm="music" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></span>
+                <span>Video</span>
+              </span>
+              <input type="checkbox" data-perm="video" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58a2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02"/></svg></span>
+                <span>YouTube</span>
+              </span>
+              <input type="checkbox" data-perm="youtube" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg></span>
+                <span>Spotify</span>
+              </span>
+              <input type="checkbox" data-perm="spotify" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="7" height="7" rx="1.5"/><rect x="15" y="3" width="7" height="7" rx="1.5"/><rect x="2" y="14" width="7" height="7" rx="1.5"/><rect x="15" y="14" width="7" height="7" rx="1.5"/></svg></span>
+                <span>Apps</span>
+              </span>
+              <input type="checkbox" data-perm="apps" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg></span>
+                <span>Weather</span>
+              </span>
+              <input type="checkbox" data-perm="weather" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                <span>Maps &amp; Navigation</span>
+              </span>
+              <input type="checkbox" data-perm="maps" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+                <span>WhatsApp</span>
+              </span>
+              <input type="checkbox" data-perm="whatsapp" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                <span>Text / SMS</span>
+              </span>
+              <input type="checkbox" data-perm="text" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.63 1.18h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.83a16 16 0 0 0 5.54 5.54l1.21-.97a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span>
+                <span>Phone calls</span>
+              </span>
+              <input type="checkbox" data-perm="call" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8l5 4-5 4V8z"/><circle cx="6" cy="16" r="2"/><circle cx="14" cy="16" r="2"/></svg></span>
+                <span>Car info</span>
+              </span>
+              <input type="checkbox" data-perm="car_info" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+                <span>Web search</span>
+              </span>
+              <input type="checkbox" data-perm="web_search" checked />
+            </label>
+
+            <label class="perm-row">
+              <span class="perm-label">
+                <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 8.5A6.5 6.5 0 0 1 8.5 2H18a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H8.5A6.5 6.5 0 0 1 2 13.5V8.5z"/><circle cx="9" cy="11" r="3"/><line x1="14" y1="8" x2="20" y2="8"/><line x1="14" y1="12" x2="20" y2="12"/><line x1="14" y1="16" x2="20" y2="16"/></svg></span>
+                <span>Radio</span>
+              </span>
+              <input type="checkbox" data-perm="radio" checked />
+            </label>
+
+            <!-- collapsible device settings -->
+            <details class="perm-group" open>
+              <summary class="perm-group-head">
+                <span class="perm-label" style="gap:10px">
+                  <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M20 12h2M2 12h2M17.66 17.66l-1.41-1.41M6.34 6.34L4.93 4.93"/></svg></span>
+                  <span>Device settings</span>
+                </span>
+                <svg class="perm-chevron" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg>
+              </summary>
+              <div class="perm-group-items">
+
+                <label class="perm-row sub">
+                  <span class="perm-label">
+                    <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h.01M7 20v-4M12 20v-8M17 20V8M22 4v16"/></svg></span>
+                    <span>Mobile data</span>
+                  </span>
+                  <input type="checkbox" data-perm="data" checked />
+                </label>
+
+                <label class="perm-row sub">
+                  <span class="perm-label">
+                    <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></span>
+                    <span>Wi-Fi</span>
+                  </span>
+                  <input type="checkbox" data-perm="wifi" checked />
+                </label>
+
+                <label class="perm-row sub">
+                  <span class="perm-label">
+                    <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg></span>
+                    <span>Bluetooth</span>
+                  </span>
+                  <input type="checkbox" data-perm="bluetooth" checked />
+                </label>
+
+                <label class="perm-row sub">
+                  <span class="perm-label">
+                    <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span>
+                    <span>Volume up</span>
+                  </span>
+                  <input type="checkbox" data-perm="volume_up" checked />
+                </label>
+
+                <label class="perm-row sub">
+                  <span class="perm-label">
+                    <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg></span>
+                    <span>Volume down</span>
+                  </span>
+                  <input type="checkbox" data-perm="volume_down" checked />
+                </label>
+
+                <label class="perm-row sub">
+                  <span class="perm-label">
+                    <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></span>
+                    <span>Brightness</span>
+                  </span>
+                  <input type="checkbox" data-perm="brightness" checked />
+                </label>
+
+                <label class="perm-row sub">
+                  <span class="perm-label">
+                    <span class="perm-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span>
+                    <span>Location</span>
+                  </span>
+                  <input type="checkbox" data-perm="location" checked />
+                </label>
+
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <!-- ── Customize ── -->
+        <section class="menu-section" data-menu-section="customize">
+          <p class="section-hint">Personalise Echo to your preference.</p>
+
+          <div class="cust-block">
+            <div class="cust-label">Assistant voice</div>
+            <div class="voice-cards" role="group" aria-label="Voice">
+              <button class="voice-card active" type="button" data-voice-profile="female">
+                <span class="voice-glyph">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                </span>
+                <span class="voice-name">Female</span>
+                <span class="voice-sub">Lessac · EN US</span>
+              </button>
+              <button class="voice-card" type="button" data-voice-profile="male">
+                <span class="voice-glyph">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                    <line x1="12" y1="19" x2="12" y2="23"/>
+                    <line x1="8" y1="23" x2="16" y2="23"/>
+                  </svg>
+                </span>
+                <span class="voice-name">Male</span>
+                <span class="voice-sub">Ryan · EN US</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="cust-block">
+            <div class="cust-label">Wake phrase</div>
+            <div class="cust-wake-phrase">
+              <span class="wake-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="23"/>
+                </svg>
+              </span>
+              <span class="wake-text">Hey Jarvis</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── Info ── -->
+        <section class="menu-section" data-menu-section="info">
+          <p class="section-hint">About Echo AI and Get My Solutions.</p>
+          <div class="info-list">
+            <button class="info-row" type="button" data-info="privacy">
+              <span class="info-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </span>
+              <span class="info-text">
+                <strong>Privacy policy</strong>
+                <small>All processing is local on this device</small>
+              </span>
+              <svg class="info-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            <button class="info-row" type="button" data-info="copyright">
+              <span class="info-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M14.83 14.83a4 4 0 1 1 0-5.66"/>
+                </svg>
+              </span>
+              <span class="info-text">
+                <strong>Copyright</strong>
+                <small>Echo AI — All rights reserved</small>
+              </span>
+              <svg class="info-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            <button class="info-row" type="button" data-info="ownership">
+              <span class="info-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </span>
+              <span class="info-text">
+                <strong>Get My Solutions</strong>
+                <small>Designed &amp; built by Get My Solutions</small>
+              </span>
+              <svg class="info-chevron" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+          </div>
+          <div class="version-badge">Echo AI · v1.0 · Phase 1</div>
+        </section>
+
+      </aside>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
