@@ -29,6 +29,35 @@
         <section id="messages" class="messages" aria-live="polite"></section>
       </section>
 
+      <!-- ── vehicle HUD ───────────────────────────────────────────── -->
+      <div id="vehicleHud" class="vehicle-hud" hidden>
+        <div class="hud-tile" id="hudSpeed">
+          <span class="hud-value" id="hudSpeedVal">0</span>
+          <span class="hud-unit">km/h</span>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-tile" id="hudBattery">
+          <svg viewBox="0 0 24 10" width="22" height="10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <rect x="0.75" y="0.75" width="20.5" height="8.5" rx="2"/>
+            <path d="M22 3v4" stroke-width="2" stroke-linecap="round"/>
+            <rect id="hudBattBar" x="2" y="2" width="16" height="6" rx="1" fill="currentColor" stroke="none"/>
+          </svg>
+          <span class="hud-value" id="hudBatVal">78</span>
+          <span class="hud-unit">%</span>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-tile">
+          <span class="hud-value" id="hudRangeVal">340</span>
+          <span class="hud-unit">km</span>
+        </div>
+        <div class="hud-divider"></div>
+        <div class="hud-tile hud-climate" id="hudClimate">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M4.22 10.22l15.56 3.56M4.22 13.78l15.56-3.56"/></svg>
+          <span class="hud-value" id="hudTempVal">22</span>
+          <span class="hud-unit">°C</span>
+        </div>
+      </div>
+
       <!-- ── bottom bar ─────────────────────────────────────────────── -->
       <div class="bottombar">
         <div class="mic-meter" aria-hidden="true"><span id="micLevel"></span></div>
@@ -307,6 +336,40 @@
                 <span class="voice-sub">Ryan · EN US</span>
               </button>
             </div>
+          </div>
+
+          <div class="cust-block">
+            <div class="cust-label">Driving mode</div>
+            <label class="perm-row" style="border-radius:14px">
+              <span class="perm-label">
+                <span class="perm-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+                    <path d="M6.34 6.34l1.42 1.42M16.24 16.24l1.42 1.42M17.66 6.34l-1.42 1.42M7.76 16.24l-1.42 1.42"/>
+                  </svg>
+                </span>
+                <span>Safe driving mode</span>
+              </span>
+              <input type="checkbox" id="drivingSafeToggle" />
+            </label>
+            <div class="cust-hint">Larger controls, hides text — safer while driving</div>
+          </div>
+
+          <div class="cust-block">
+            <div class="cust-label">Vehicle HUD</div>
+            <label class="perm-row" style="border-radius:14px">
+              <span class="perm-label">
+                <span class="perm-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                    <line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
+                  </svg>
+                </span>
+                <span>Show vehicle HUD</span>
+              </span>
+              <input type="checkbox" id="vehicleHudToggle" />
+            </label>
+            <div class="cust-hint">Speed, battery, range and cabin temp overlay</div>
           </div>
 
           <div class="cust-block">

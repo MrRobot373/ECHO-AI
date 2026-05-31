@@ -232,7 +232,12 @@ def make_call(args: dict, settings: Settings) -> str:
     number = _load_contacts(settings).get(contact.lower())
     if not number:
         return f"I don't have a number saved for {contact}. Add them to contacts.json."
-    return f"I'll call {contact} through the car's connected phone."
+    try:
+        _open(f"tel:{number}")
+        return f"Calling {contact}."
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("tel: URI failed: %s", exc)
+        return f"I'll call {contact} through the car's connected phone."
 
 
 def control_setting(args: dict, settings: Settings) -> str:
@@ -279,6 +284,69 @@ def get_car_info(args: dict, settings: Settings) -> str:
     return snippet[:300] if snippet else "I don't have details on that yet."
 
 
+def get_vehicle_data(args: dict, settings: Settings) -> str:
+    from backend.obd.mock_data import get_vehicle_data as _get
+    d = _get()
+    bat = round(d["battery_pct"])
+    spd = d["speed_kmh"]
+    rng = d["range_km"]
+    temp = d["motor_temp_c"]
+    p = d["tyre_pressure"]
+    return (
+        f"Speed is {spd} kilometres per hour. Battery is at {bat} percent with {rng} kilometres of range. "
+        f"Motor temperature is {temp} degrees. Tyre pressures are "
+        f"front {p['FL']} and {p['FR']} PSI, rear {p['RL']} and {p['RR']} PSI."
+    )
+
+
+def get_diagnostics(args: dict, settings: Settings) -> str:
+    from backend.obd.mock_data import get_diagnostics as _get
+    d = _get()
+    if d["fault_codes"]:
+        codes = ", ".join(d["fault_codes"])
+        return f"I found {len(d['fault_codes'])} fault code{'s' if len(d['fault_codes']) > 1 else ''}: {codes}. I recommend visiting a service centre."
+    return (
+        f"No fault codes detected. Battery health is {d['battery_health_pct']} percent. "
+        f"All systems are running normally."
+    )
+
+
+def set_climate(args: dict, settings: Settings) -> str:
+    from backend.obd.mock_data import set_climate as _set
+    temp = args.get("temperature")
+    ac = args.get("ac")
+    if temp is None and ac is None:
+        return "What temperature should I set, or should I turn the AC on or off?"
+    ac_bool = None if ac is None else (ac == "on")
+    _set(int(temp) if temp is not None else 22, ac_bool)
+    parts = []
+    if temp is not None:
+        parts.append(f"cabin temperature to {temp} degrees")
+    if ac is not None:
+        parts.append(f"AC {ac}")
+    return f"Setting {' and '.join(parts)}."
+
+
+def control_vehicle(args: dict, settings: Settings) -> str:
+    from backend.obd import mock_data as obd
+    feature = str(args.get("feature", "")).lower()
+    action = str(args.get("action", "")).lower()
+    if feature == "seat":
+        obd.set_seat(action)
+        return f"Adjusting seat to {action} position."
+    if feature == "window":
+        obd.set_window(action)
+        return f"{'Opening' if action == 'open' else 'Closing'} the windows."
+    if feature == "sunroof":
+        obd.set_sunroof(action)
+        return f"{'Opening' if action == 'open' else 'Closing'} the sunroof."
+    if feature == "driving_mode":
+        obd.set_driving_mode(action)
+        labels = {"eco": "Eco mode for maximum range", "sport": "Sport mode for full power", "normal": "Normal driving mode"}
+        return labels.get(action, f"Switching to {action} mode.") + "."
+    return f"I'm not sure how to control {feature} yet."
+
+
 EXECUTORS = {
     "open_app": open_app,
     "play_youtube": play_youtube,
@@ -295,6 +363,10 @@ EXECUTORS = {
     "control_setting": control_setting,
     "play_radio": play_radio,
     "get_car_info": get_car_info,
+    "get_vehicle_data": get_vehicle_data,
+    "get_diagnostics": get_diagnostics,
+    "set_climate": set_climate,
+    "control_vehicle": control_vehicle,
 }
 
 

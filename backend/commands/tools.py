@@ -55,6 +55,21 @@ TOOL_SPECS: list[dict] = [
         {"station": {"type": "string", "description": "Station name; optional"}}, []),
     _fn("get_car_info", "Answer a question about the car, its features, or FAQs.",
         {"question": {"type": "string"}}, ["question"]),
+    _fn("get_vehicle_data",
+        "Get live vehicle stats: speed, battery percentage, range, motor temperature, tyre pressures.",
+        {}, []),
+    _fn("get_diagnostics",
+        "Check vehicle health: fault codes, battery health, tyre pressures, motor temperature.",
+        {}, []),
+    _fn("set_climate",
+        "Set cabin temperature or toggle AC. Use when user says 'set AC', 'heat the car', 'set temperature'.",
+        {"temperature": {"type": "integer", "description": "Target temperature in Celsius, e.g. 22"},
+         "ac": {"type": "string", "enum": ["on", "off"], "description": "Turn AC on or off; optional"}}, []),
+    _fn("control_vehicle",
+        "Control physical car features: seat position, windows (open/close), sunroof (open/close), driving mode.",
+        {"feature": {"type": "string", "enum": ["seat", "window", "sunroof", "driving_mode"]},
+         "action": {"type": "string", "description": "e.g. 'recline', 'open', 'close', 'eco', 'sport', 'normal'"}},
+        ["feature", "action"]),
 ]
 
 # Static tool -> permission key. Tools with dynamic permissions resolve in required_permission().
@@ -72,6 +87,10 @@ _STATIC_PERMISSION = {
     "make_call": "call",
     "play_radio": "radio",
     "get_car_info": "car_info",
+    "get_vehicle_data": "car_info",
+    "get_diagnostics": "car_info",
+    "set_climate": "car_info",
+    "control_vehicle": "car_info",
 }
 
 

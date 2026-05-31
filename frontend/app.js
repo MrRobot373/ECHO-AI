@@ -492,3 +492,85 @@ function showToast(message) {
     setTimeout(() => { elements.toast.hidden = true; }, 260);
   }, 2400);
 }
+
+/* ── driving-safe mode ────────────────────────────────────────────── */
+const drivingSafeToggle = document.querySelector("#drivingSafeToggle");
+const vehicleHudToggle = document.querySelector("#vehicleHudToggle");
+const vehicleHud = document.querySelector("#vehicleHud");
+
+function setDrivingSafe(on) {
+  document.body.classList.toggle("driving-safe", on);
+  if (drivingSafeToggle) drivingSafeToggle.checked = on;
+}
+
+function setVehicleHud(on) {
+  if (vehicleHud) vehicleHud.hidden = !on;
+  if (vehicleHudToggle) vehicleHudToggle.checked = on;
+}
+
+if (drivingSafeToggle) {
+  drivingSafeToggle.addEventListener("change", () => {
+    setDrivingSafe(drivingSafeToggle.checked);
+    showToast(drivingSafeToggle.checked ? "Safe driving mode on." : "Safe driving mode off.");
+    saveUIModePrefs();
+  });
+}
+
+if (vehicleHudToggle) {
+  vehicleHudToggle.addEventListener("change", () => {
+    setVehicleHud(vehicleHudToggle.checked);
+    showToast(vehicleHudToggle.checked ? "Vehicle HUD on." : "Vehicle HUD off.");
+    saveUIModePrefs();
+  });
+}
+
+function saveUIModePrefs() {
+  localStorage.setItem("echo-ai-ui", JSON.stringify({
+    drivingSafe: drivingSafeToggle?.checked || false,
+    vehicleHud: vehicleHudToggle?.checked || false,
+  }));
+}
+
+function loadUIModePrefs() {
+  try {
+    const p = JSON.parse(localStorage.getItem("echo-ai-ui") || "{}");
+    if (p.drivingSafe) setDrivingSafe(true);
+    if (p.vehicleHud) setVehicleHud(true);
+  } catch { /* ignore */ }
+}
+
+loadUIModePrefs();
+
+// poll vehicle data every 5 s when HUD is visible
+setInterval(async () => {
+  if (!vehicleHud || vehicleHud.hidden) return;
+  try {
+    const res = await fetch("/api/vehicle");
+    if (res.ok) updateHud(await res.json());
+  } catch { /* offline or unavailable */ }
+}, 5000);
+
+/* ── vehicle HUD updates ──────────────────────────────────────────── */
+function updateHud(data) {
+  const speed = document.querySelector("#hudSpeedVal");
+  const bat = document.querySelector("#hudBatVal");
+  const batEl = document.querySelector("#hudBattery");
+  const batBar = document.querySelector("#hudBattBar");
+  const range = document.querySelector("#hudRangeVal");
+  const temp = document.querySelector("#hudTempVal");
+
+  if (speed) speed.textContent = data.speed_kmh ?? "—";
+  if (bat && data.battery_pct != null) {
+    const pct = Math.round(data.battery_pct);
+    bat.textContent = pct;
+    if (batEl) batEl.classList.toggle("low", pct < 20);
+    if (batBar) batBar.setAttribute("width", Math.round(16 * pct / 100));
+  }
+  if (range) range.textContent = data.range_km ?? "—";
+  if (temp) temp.textContent = data.cabin_temp_c ?? "—";
+
+  // auto-enable driving-safe mode if speed > 20 km/h
+  if ((data.speed_kmh ?? 0) > 20 && !document.body.classList.contains("driving-safe")) {
+    setDrivingSafe(true);
+  }
+}

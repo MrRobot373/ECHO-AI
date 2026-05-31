@@ -12,6 +12,7 @@ import numpy as np
 
 from backend.commands.permissions import PermissionStore
 from backend.commands.router import route as route_command
+from backend.obd.monitor import OBDMonitor
 from backend.config import Settings
 from backend.pipeline.errors import ComponentUnavailable
 from backend.pipeline.llm import OllamaClient, pop_complete_sentences
@@ -86,6 +87,7 @@ class VoiceOrchestrator:
         self._listening_started_at = 0.0
         self._processing_task: asyncio.Task | None = None
         self._warm_task: asyncio.Task | None = None
+        self._obd_monitor = OBDMonitor(speak=self._speak_alert)
 
     async def start(self) -> None:
         self.wake_word.reset()
@@ -113,6 +115,7 @@ class VoiceOrchestrator:
             self._warm_task = asyncio.create_task(self._warm_up())
 
     async def close(self) -> None:
+        self._obd_monitor.stop()
         if self._warm_task and not self._warm_task.done():
             self._warm_task.cancel()
             try:
@@ -147,6 +150,7 @@ class VoiceOrchestrator:
             if self.settings.wake_greeting:
                 await asyncio.to_thread(self._build_greeting_audio)
             await self.send_event({"type": "warmup", "state": "ready"})
+            self._obd_monitor.start()
         except asyncio.CancelledError:
             raise
         except ComponentUnavailable as exc:
@@ -448,6 +452,14 @@ class VoiceOrchestrator:
                 "data": base64.b64encode(wav_bytes).decode("ascii"),
             }
         )
+
+    async def _speak_alert(self, text: str) -> None:
+        """Proactive spoken alert (from OBD monitor). Only fires when idle."""
+        if self.state not in ("sleeping", "listening"):
+            return
+        logger.info("proactive alert: %s", text)
+        await self._speak(text)
+        await self._set_state("sleeping")
 
     async def _apply_settings(self, message: dict) -> None:
         try:

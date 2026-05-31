@@ -119,4 +119,10 @@ async def index() -> FileResponse:
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
+@app.get("/api/vehicle")
+async def vehicle_data() -> dict:
+    from backend.obd.mock_data import get_vehicle_data
+    return get_vehicle_data()
+
+
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
