@@ -39,7 +39,8 @@ DEFAULT_SYSTEM_PROMPT = (
 
 
 def _default_whisper_model() -> str:
-    return str(MODELS_DIR / "ggml-tiny.en.bin")
+    small = MODELS_DIR / "ggml-small.en.bin"
+    return str(small if small.exists() else MODELS_DIR / "ggml-tiny.en.bin")
 
 
 def _default_whisper_vad_model() -> str:
@@ -146,7 +147,7 @@ class Settings:
     ollama_model: str = os.getenv("OLLAMA_MODEL", "qwen2.5:0.5b")
     # Tool-capable model used for command/intent decisions AND conversational
     # answers. 3B keeps latency low while still doing reliable tool calls.
-    ollama_tool_model: str = os.getenv("OLLAMA_TOOL_MODEL", "llama3.2:3b")
+    ollama_tool_model: str = os.getenv("OLLAMA_TOOL_MODEL", "qwen2.5:1.5b")
     llm_temperature: float = _env_float("ECHO_LLM_TEMPERATURE", 0.35)
     llm_num_predict: int = _env_int("ECHO_LLM_NUM_PREDICT", _profile_default(160, 72))
     llm_tts_flush_chars: int = _env_int("ECHO_LLM_TTS_FLUSH_CHARS", _profile_default(80, 60))

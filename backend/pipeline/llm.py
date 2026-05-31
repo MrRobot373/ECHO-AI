@@ -50,7 +50,7 @@ class OllamaClient:
         }
 
         try:
-            async with httpx.AsyncClient(timeout=None) as client:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(60.0, connect=5.0)) as client:
                 async with client.stream("POST", self.settings.ollama_url, json=payload) as response:
                     response.raise_for_status()
                     async for line in response.aiter_lines():

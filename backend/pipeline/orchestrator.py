@@ -245,12 +245,8 @@ class VoiceOrchestrator:
             logger.info("speech segment captured: duration=%.2fs rms=%.4f peak=%.4f", duration, level, peak)
             text = await asyncio.to_thread(self.stt.transcribe, audio)
             if not text:
-                await self.send_event(
-                    {
-                        "type": "notice",
-                        "message": f"No speech detected. Captured {duration:.1f}s, level {level:.3f}.",
-                    }
-                )
+                logger.info("empty STT result: duration=%.2fs level=%.4f — reprompting", duration, level)
+                await self._speak("Sorry, I didn't catch that. Could you say it again?")
                 self.vad.reset()
                 self._listening_started_at = time.monotonic()
                 await self._set_state("listening")

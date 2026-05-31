@@ -257,7 +257,10 @@ async function handleServerMessage(message) {
       playEarcon("wake");
       break;
     case "speech":
-      if (message.active) elements.statusText.textContent = STATUS_LABELS.listening;
+      if (message.active) {
+        elements.statusText.textContent = STATUS_LABELS.listening;
+        playEarcon("listen");
+      }
       break;
     case "assistant_start":
       assistantMessage = appendMessage("assistant", "");

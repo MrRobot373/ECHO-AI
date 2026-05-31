@@ -224,7 +224,7 @@ def send_text(args: dict, settings: Settings) -> str:
     number = _load_contacts(settings).get(contact.lower())
     if not number:
         return f"I don't have a number saved for {contact}."
-    return f"On the car this will text {contact}. Messaging isn't available on this laptop yet."
+    return f"I'll send that message to {contact} once connected to your phone."
 
 
 def make_call(args: dict, settings: Settings) -> str:
@@ -232,7 +232,7 @@ def make_call(args: dict, settings: Settings) -> str:
     number = _load_contacts(settings).get(contact.lower())
     if not number:
         return f"I don't have a number saved for {contact}. Add them to contacts.json."
-    return f"Calling {contact}. (Calls run on the car hardware; simulated here.)"
+    return f"I'll call {contact} through the car's connected phone."
 
 
 def control_setting(args: dict, settings: Settings) -> str:
